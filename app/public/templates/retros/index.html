@@ -1,0 +1,19 @@
+<h1>Retros</h1>
+
+<!--
+  <form ng-submit="ctrl.submit(form, retroForm.$valid, retros)" name="retroForm" novalidate ng-controller="FormController as ctrl">
+  <div class="form-group">
+    <input ng-model="form.title" type="text" class="form-control" placeholder="New Retro" required name="title">
+    <p ng-if="retroForm.title.$error.required && retroForm.title.$touched" class="help-block">title is required.</p>
+  </div>
+  <button type="submit" class="btn btn-default">Create</button>
+</form>
+-->
+<ul>
+  <li ng-repeat="retro in retros">
+    <a ng-href="{{'#/retros/' + retro._id}}">{{retro.title}}</a>
+    <button class="btn btn-danger" ng-click="delete(retro)">Delete</button>
+  </li>
+</ul>
+
+

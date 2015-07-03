@@ -1,0 +1,28 @@
+  <div class="row">
+
+      <div class="col-md-12 ">
+
+          <form class="form-horizontal" ng-submit="ctrl.submit(retro, input, retroForm.$valid)" name="retroForm" novalidate ng-controller="FormConsumeController as ctrl">
+              <div ng-model="input" fb-form="default" fb-default="defaultValue"></div>
+              <div class="form-group">
+                  <div class="col-md-12 col-md-offset-4">
+                      <input type="submit" ng-click="submit()" class="btn btn-default"/>
+                  </div>
+              </div>
+          </form>
+      </div>
+      <div>
+        <ul>
+          <li ng-repeat="response in responses"> {{response.input}} </li>
+        </ul>
+      </div>
+  </div>
+
+
+  <div class="panel">
+    <label>
+      Show data
+      <input ng-model="diagnose" type='checkbox' />
+    </label>
+    <div ng-if="diagnose"> {{retro}} </div>
+  </div>

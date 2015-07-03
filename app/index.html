@@ -1,0 +1,33 @@
+<!doctype html>
+<html >
+  <head>
+    <title>Retro</title>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="css/style.css">
+
+    <script src="js/vendor/vendor.min.js"></script>
+    <script src="js/application.js"></script>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body class="container" ng-app="myApp">
+
+      <div class="header">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="#">Home</a></li>
+          <li class='active'><a href="#/retros">All Retros</a></li>
+          <li><a href="#/retros/new">New Retro</a></li>
+        </ul>
+        <h3 class="text-muted">Scrummer</h3>
+      </div>
+
+      <!--  NG-VIEW -->
+      <div class="ng-view"></div>
+      <!--  NG-VIEW -->
+
+      <div class="footer">
+        <p>© Scrummer</p>
+      </div>
+
+  </body>
+</html>
