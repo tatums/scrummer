@@ -2,8 +2,8 @@
  A tool for building a retro
 
 ## TODO
-[ ] - Add some kind of user
-[ ] - Email?
+[x] - Login Google Api
+[ ] - Persist User Data
 
 
 ## install npm dependencies

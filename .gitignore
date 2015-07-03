@@ -38,4 +38,4 @@ bower_components
 # compass
 .sass-cache
 
-
+app/config/app.yml
