@@ -15,6 +15,7 @@ var myControllers = angular.module('myControllers', []);
 
 'use strict';
 
+
 angular.module('myApp').config( function($stateProvider, $urlRouterProvider) {
 
     $urlRouterProvider.otherwise('/');

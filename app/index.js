@@ -1,4 +1,5 @@
 var express     = require('express');
+var session     = require('express-session')
 var morgan      = require('morgan');
 var bodyParser  = require('body-parser');
 var app         = express();
@@ -6,7 +7,13 @@ var server      = require('http').createServer(app);
 var io          = require('socket.io')(server);
 var mongoose    = require('mongoose');
 
+var sess = {
+    secret: 'keyboard cat',
+    cookie: {}
+};
+
 app.use(morgan('dev'));
+app.use(session(sess));
 
 mongoose.connect('mongodb://localhost/retro');
 var Retro     = require('./backend/models/retro');
@@ -19,6 +26,11 @@ app.use(express.static('app/public'));
 
 app
     .get('/', function(req, res){
+
+        var sess = req.session
+
+        console.log('sess', sess);
+
         res.sendFile(__dirname + '/index.html');
     })
     .get('/chat', function(req, res){
@@ -77,6 +89,8 @@ app
             res.json({responses: responses});
         });
     });
+
+
 
 
 

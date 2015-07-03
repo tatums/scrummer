@@ -6,6 +6,8 @@ var gutil   = require('gulp-util');
 var concat = require('gulp-concat');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
+var server = require('gulp-develop-server');
+
 
 var vendorSourceDir = 'bower_components'
 var vendorTargetDir = 'app/public/js'
@@ -54,10 +56,22 @@ gulp.task('minify-app', function(){
     .pipe(gulp.dest(appTargetDir));
 });
 
+
+// run server
+gulp.task( 'server:start', function() {
+    server.listen( { path: './app/index.js' } );
+});
+
+// restart server if app.js changed
+//gulp.task( 'server:restart', function() {
+//    gulp.watch( [ './app/index.js' ], server.restart );
+//});
+
 // Watch Our Files
 gulp.task('watch', function() {
   gulp.watch(appFiles, ['minify-app']);
 });
 
 
-gulp.task('default', ['minify-vendor', 'minify-app']);
+gulp.task('default', ['minify-vendor', 'watch', 'server:start']);
+
