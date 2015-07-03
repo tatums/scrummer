@@ -1,12 +1,13 @@
 'use strict';
 
 var myApp = angular.module('myApp', [
-        'ngRoute',
+        'ui.router',
         'myControllers',
         'myServices',
         'builder',
         'builder.components',
-        'validator.rules'
+        'validator.rules',
+        'ui.bootstrap'
 ]);
 
 var myServices = angular.module('myServices', ['ngResource']);
@@ -14,10 +15,33 @@ var myControllers = angular.module('myControllers', []);
 
 'use strict';
 
-angular.module('myApp').config( function($routeProvider, $locationProvider) {
+angular.module('myApp').config( function($stateProvider, $urlRouterProvider) {
 
-    $routeProvider
-        .when('/', {
+    $urlRouterProvider.otherwise('/');
+
+
+    $stateProvider
+        .state('root', {
+            url: '/',
+            templateUrl: 'templates/index.html',
+            controller: 'IndexController',
+            resolve: {
+                retros: function($q, Retro) {
+                    var deferred = $q.defer();
+                    Retro.query().$promise.then(function(data){
+                        deferred.resolve(data)
+                    });
+                    return deferred.promise;
+                }
+            }
+        })
+
+        .state('retros', {
+            templateUrl: 'templates/retros/base.html',
+        })
+
+        .state('retros.index', {
+            url: '/retros',
             templateUrl: 'templates/retros/index.html',
             controller: 'IndexController',
             resolve: {
@@ -30,24 +54,27 @@ angular.module('myApp').config( function($routeProvider, $locationProvider) {
                 }
             }
         })
-        .when('/retros/new', {
+        .state('retros.new', {
+            url: '/retros/new',
             templateUrl: 'templates/retros/new.html',
             controller: 'NewController'
         })
-        .when('/retros/:id', {
+
+        .state('retros.show', {
+            url: '/retros/:id',
             templateUrl: 'templates/retros/show.html',
             controller: 'ShowController',
             resolve: {
-                retro: function($q, Retro, $route) {
+                retro: function($q, Retro, $stateParams) {
                     var deferred = $q.defer();
-                    Retro.get({id: $route.current.params.id}).$promise.then(function(data){
+                    Retro.get({id: $stateParams.id}).$promise.then(function(data){
                         deferred.resolve(data)
                     });
                     return deferred.promise;
                 },
-                responses: function($q, Response, $route) {
+                responses: function($q, Response, $stateParams) {
                     var deferred = $q.defer();
-                    Response.all({retro_id: $route.current.params.id}).$promise.then(function(data){
+                    Response.all({retro_id: $stateParams.id}).$promise.then(function(data){
                         deferred.resolve(data.responses)
                     });
                     return deferred.promise;
@@ -55,12 +82,60 @@ angular.module('myApp').config( function($routeProvider, $locationProvider) {
             }
         })
 
-    .otherwise({
-        redirectTo: '/'
-    });
 });
 
 
+
+angular.module('myApp').controller('ModalDemoCtrl', function ($scope, $modal, $log) {
+
+  $scope.items = ['item1', 'item2', 'item3'];
+
+  $scope.animationsEnabled = true;
+
+  $scope.open = function (size) {
+
+    var modalInstance = $modal.open({
+      animation: $scope.animationsEnabled,
+      templateUrl: 'myModalContent.html',
+      controller: 'ModalInstanceCtrl',
+      size: size,
+      resolve: {
+        items: function () {
+          return $scope.items;
+        }
+      }
+    });
+
+    modalInstance.result.then(function (selectedItem) {
+      $scope.selected = selectedItem;
+    }, function () {
+      $log.info('Modal dismissed at: ' + new Date());
+    });
+  };
+
+  $scope.toggleAnimation = function () {
+    $scope.animationsEnabled = !$scope.animationsEnabled;
+  };
+
+});
+
+// Please note that $modalInstance represents a modal window (instance) dependency.
+// It is not the same as the $modal service used above.
+angular.module('myApp').controller('ModalInstanceCtrl', function ($scope, $modalInstance, items) {
+
+  $scope.items = items;
+  $scope.selected = {
+    item: $scope.items[0]
+  };
+
+  $scope.ok = function () {
+    $modalInstance.close($scope.selected.item);
+  };
+
+  $scope.cancel = function () {
+    $modalInstance.dismiss('cancel');
+  };
+});
 
 'use strict';
 
@@ -68,7 +143,7 @@ myControllers.controller('FormCanvasController', [
         '$scope',
         'Retro',
         '$builder',
-        '$validator', function($scope, Retro, $builder, $validator){
+        '$validator', '$location', function($scope, Retro, $builder, $validator, $location){
 
       $scope.formCanvas = $builder.forms['default'];
       $scope.input = [];
@@ -83,11 +158,10 @@ myControllers.controller('FormCanvasController', [
             r.title = formData.title;
             r.form = angular.toJson( $scope.formCanvas );
 
-            console.log('fd', formData)
-            console.log('r', r)
-
             r.$save().then(function(data) {
-
+                console.log('data')
+                    console.log( $location.path("/")
+                );
                 //retros.push(data.retro)
                 //this.$setPristine(true)
             })

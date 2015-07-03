@@ -11,6 +11,7 @@ app.use(morgan('dev'));
 mongoose.connect('mongodb://localhost/retro');
 var Retro     = require('./backend/models/retro');
 var Response     = require('./backend/models/response');
+var Response     = require('./backend/models/user');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());

@@ -6,11 +6,11 @@
 [ ] - Email?
 
 
-## setup
+## install npm dependencies
 ```
 $ npm install
 ```
-### bower deps
+### install bower dependencies
 ```
 $ bower install
 ```
@@ -21,4 +21,10 @@ $ gulp
 #### Live updates
 ```
 $ gulp watch
+```
+
+
+## Run express server
+```
+$ node app/index.js
 ```

@@ -15,13 +15,15 @@ gulp.task('minify-vendor', function(){
   return gulp.src([
           vendorSourceDir + '/jquery/dist/jquery.js',
           vendorSourceDir + '/angular/angular.js',
-          vendorSourceDir + '/angular-route/angular-route.js',
+          vendorSourceDir + '/angular-ui-router/release/angular-ui-router.js',
           vendorSourceDir + '/angular-resource/angular-resource.js',
           vendorSourceDir + '/angular-form-builder/dist/angular-form-builder.js',
           vendorSourceDir + '/angular-form-builder/dist/angular-form-builder-components.js',
           vendorSourceDir + '/angular-validator/dist/angular-validator.js',
           vendorSourceDir + '/angular-validator/dist/angular-validator-rules.js',
-          vendorSourceDir + '/bootstrap/dist/js/bootstrap.js'
+          vendorSourceDir + '/bootstrap/dist/js/bootstrap.js',
+          vendorSourceDir + '/angular-bootstrap/ui-bootstrap.js',
+          vendorSourceDir + '/angular-bootstrap/ui-bootstrap-tpls.js'
         ])
     .pipe(concat('vendor.js'))
     .pipe(gulp.dest(vendorTargetDir))

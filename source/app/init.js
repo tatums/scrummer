@@ -1,12 +1,13 @@
 'use strict';
 
 var myApp = angular.module('myApp', [
-        'ngRoute',
+        'ui.router',
         'myControllers',
         'myServices',
         'builder',
         'builder.components',
-        'validator.rules'
+        'validator.rules',
+        'ui.bootstrap'
 ]);
 
 var myServices = angular.module('myServices', ['ngResource']);

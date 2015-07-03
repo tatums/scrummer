@@ -11,7 +11,7 @@
 -->
 <ul>
   <li ng-repeat="retro in retros">
-    <a ng-href="{{'#/retros/' + retro._id}}">{{retro.title}}</a>
+    <a ui-sref="retros.show({id: retro._id})">{{retro.title}}</a>
     <button class="btn btn-danger" ng-click="delete(retro)">Delete</button>
   </li>
 </ul>

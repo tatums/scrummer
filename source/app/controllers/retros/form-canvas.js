@@ -4,7 +4,7 @@ myControllers.controller('FormCanvasController', [
         '$scope',
         'Retro',
         '$builder',
-        '$validator', function($scope, Retro, $builder, $validator){
+        '$validator', '$location', function($scope, Retro, $builder, $validator, $location){
 
       $scope.formCanvas = $builder.forms['default'];
       $scope.input = [];
@@ -19,11 +19,10 @@ myControllers.controller('FormCanvasController', [
             r.title = formData.title;
             r.form = angular.toJson( $scope.formCanvas );
 
-            console.log('fd', formData)
-            console.log('r', r)
-
             r.$save().then(function(data) {
-
+                console.log('data')
+                    console.log( $location.path("/")
+                );
                 //retros.push(data.retro)
                 //this.$setPristine(true)
             })
