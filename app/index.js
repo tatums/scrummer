@@ -20,6 +20,25 @@ var sess = {
 };
 
 
+app.use(morgan('dev'));
+app.use(session(sess));
+app.use(passport.initialize());
+app.use(passport.session());
+
+mongoose.connect('mongodb://localhost/retro');
+var Retro     = require('./backend/models/retro');
+var Response     = require('./backend/models/response');
+var User     = require('./backend/models/user');
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+
+app.use(express.static('app/public'));
+
+
+
+
 
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
@@ -29,10 +48,23 @@ var sess = {
 //   have a database of user records, the complete Google profile is
 //   serialized and deserialized.
 passport.serializeUser(function(user, done) {
+
+
+    console.log('passport.serializeUser')
+
+
   done(null, user);
 });
 
 passport.deserializeUser(function(obj, done) {
+
+
+    console.log('passport.deserializeUser')
+    console.log('obj', obj)
+    console.log('done', done)
+
+
+
   done(null, obj);
 });
 
@@ -42,23 +74,39 @@ passport.deserializeUser(function(obj, done) {
 //   credentials (in this case, an accessToken, refreshToken, and Google
 //   profile), and invoke a callback with a user object.
 passport.use(new GoogleStrategy({
+
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
     callbackURL: "http://127.0.0.1:3000/auth/google/callback"
-},
-function(accessToken, refreshToken, profile, done) {
+
+}, function(accessToken, refreshToken, profile, done) {
     // asynchronous verification, for effect...
     process.nextTick(function () {
 
-        console.log('profile', profile)
-        console.log('accessToken', accessToken)
-        console.log('refreshToken', refreshToken)
-        console.log('done', done)
 
-        // To keep the example simple, the user's Google profile is returned to
-        // represent the logged-in user.  In a typical application, you would want
-        // to associate the Google account with a user record in your database,
-        // and return that user instead.
+
+
+
+        User.find({providerId: profile.id}, function(err, user) {
+          if (err) throw err;
+          // object of the user
+
+            if (user.length == 0) {
+
+            console.log('creating new user')
+                var u       = new User();
+                u._raw      = profile._raw;
+                u.provider  = profile.provider;
+                u.providerId = profile.id;
+
+                u.save(function(err, user) {
+                    if (err) console.log('err', err);
+                });
+            }
+
+        });
+
+
         return done(null, profile);
     });
 }
@@ -66,22 +114,6 @@ function(accessToken, refreshToken, profile, done) {
 
 
 
-
-app.use(morgan('dev'));
-app.use(session(sess));
-app.use(passport.initialize());
-app.use(passport.session());
-
-mongoose.connect('mongodb://localhost/retro');
-var Retro     = require('./backend/models/retro');
-var Response     = require('./backend/models/response');
-var Response     = require('./backend/models/user');
-
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
-
-app.use(express.static('app/public'));
 
 
 
