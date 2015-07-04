@@ -1,19 +1,34 @@
 <h1>Retros</h1>
 
-<!--
-  <form ng-submit="ctrl.submit(form, retroForm.$valid, retros)" name="retroForm" novalidate ng-controller="FormController as ctrl">
-  <div class="form-group">
-    <input ng-model="form.title" type="text" class="form-control" placeholder="New Retro" required name="title">
-    <p ng-if="retroForm.title.$error.required && retroForm.title.$touched" class="help-block">title is required.</p>
-  </div>
-  <button type="submit" class="btn btn-default">Create</button>
-</form>
--->
-<ul>
-  <li ng-repeat="retro in retros">
-    <a ui-sref="retros.show({id: retro._id})">{{retro.title}}</a>
-    <button class="btn btn-danger" ng-click="delete(retro)">Delete</button>
-  </li>
-</ul>
+<table class="table table-striped table-bordered">
+
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Creator</th>
+      <th></th>
+    </tr>
+  </thead>
+  <tbody>
+
+    <tr ng-repeat="retro in retros">
+      <td>
+        <a ui-sref="retros.show({id: retro._id})">{{retro.title}}</a>
+      </td>
+      <td>
+        <img ng-src="{{retro._creator.photos[0].value}}" alt="{{retro._creator.photos[0].value}}" />
+        {{retro._creator.firstName}} {{retro._creator.lastName}}
+      </td>
+      <td>
+        <button class="btn btn-danger" ng-click="delete(retro)">Delete</button>
+      </td>
+    </li>
+
+
+  </tbody>
+
+
+</table>
+
 
 

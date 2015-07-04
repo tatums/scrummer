@@ -11,12 +11,13 @@ var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 var config    = require('yaml-config');
 var settings  = config.readConfig('app/config/app.yml')
 
-
 var GOOGLE_CLIENT_ID = settings.google.client_id;
 var GOOGLE_CLIENT_SECRET = settings.google.client_secret;
 
 var sess = {
     secret: 'keyboard cat',
+    resave: true,
+    saveUninitialized: true,
     cookie: {}
 };
 
@@ -41,6 +42,19 @@ app.use(express.static('app/public'));
 
 
 
+
+socket = require('./socket.js');
+io.sockets.on('connection', socket);
+
+
+
+
+
+
+
+
+
+
 // Passport session setup.
 //   To support persistent login sessions, Passport needs to be able to
 //   serialize users into and deserialize users out of the session.  Typically,
@@ -49,14 +63,12 @@ app.use(express.static('app/public'));
 //   have a database of user records, the complete Google profile is
 //   serialized and deserialized.
 passport.serializeUser(function(user, done) {
-
     var hash = {
         provider:       user['provider'],
         providerId:     user['id'],
         displayName:    user['displayName'],
         photos:         user['photos']
     }
-
     done(null, hash);
 });
 
@@ -91,15 +103,16 @@ passport.use(new GoogleStrategy({
 
 
         User.find({providerId: profile.id}, function(err, user) {
-          if (err) throw err;
-          // object of the user
+            if (err) throw err;
+            // object of the user
 
             if (user.length == 0) {
-
                 var u       = new User();
                 u.provider  = profile.provider;
-                u.providerId = profile.id;
-
+                u.providerId= profile.id;
+                u.firstName = profile.name.givenName;
+                u.lastName  = profile.name.familyName;
+                u.photos    = profile.photos;
                 u.save(function(err, user) {
                     if (err) console.log('err', err);
                 });
@@ -136,7 +149,6 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 
     res.redirect('/');
 
-
 });
 
 app.get('/logout', function(req, res){
@@ -148,9 +160,9 @@ app.get('/logout', function(req, res){
 
 app.get('/', function(req, res){
 
-console.log('req["user"]', req['user']);
+console.log('user', req.user);
 
-        if (req['user'] != undefined) {
+        if (req.user != undefined) {
             res.sendFile(__dirname + '/retro.html');
         }
         else {
@@ -160,40 +172,54 @@ console.log('req["user"]', req['user']);
 
 
     .get('/chat', function(req, res){
-        res.sendFile(__dirname + '/chat.html');
+        console.log('chat')
+        res.sendFile(__dirname + '/frontend/chat.html');
     })
 
     .get('/retros', function(req, res){
-        Retro.find(function(err, retros) {
+        Retro.find().populate('_creator').exec(function(err, retros) {
             if (err) res.send(err);
             res.json(retros);
         });
     })
 
     .get('/retros/:id', function (req, res){
-        // TODO - Change this to findOne
-        Retro.find({_id: req.params.id}, function(err, retros) {
+
+
+
+        Retro.findById(req.params.id).populate('_creator').exec(function(err, retro) {
             if (err) res.send(err);
-            res.json(retros[0]);
+            res.json(retro);
         });
     })
 
     .delete('/retros/:id', ensureAuthenticated, function (req, res){
-        Retro.remove({_id: req.params.id}, function(err, bear) {
+        Retro.remove({_id: req.params.id}, function(err, retro) {
             if (err) res.send(err);
             res.json({message: 'Successfully deleted' });
         });
     })
 
     .post('/retros', ensureAuthenticated, function(req, res) {
-        var sess = req.session
-        var r = new Retro();
-        r.title = req.body.title;
-        r.form = req.body.form;
-        r.save(function(err, retro) {
+
+        User.findById(req.user._id, function(err, currentUser) {
+
             if (err) res.send(err);
-            res.json({retro: {_id: retro._id, title: retro.title, form: retro.form} });
+
+            console.log('currentUser', currentUser._id)
+            var r       = new Retro();
+            r.title     = req.body.title;
+            r.form      = req.body.form;
+            r._creator  = currentUser._id;
+
+            r.save(function(err, retro) {
+                if (err) res.send(err);
+                res.json({retro: {_id: retro._id, title: retro.title, form: retro.form, firstName: retro._creator.firtName} });
+            });
+
+
         });
+
     })
 
     .post('/responses', ensureAuthenticated, function(req, res) {
@@ -214,15 +240,6 @@ console.log('req["user"]', req['user']);
     });
 
 
-
-
-
-
-io.on('connection', function(socket){
-  socket.on('stuff', function(msg){
-    io.emit('stuff', msg);
-  });
-});
 
 server.listen(3000, function(){
   console.log('listening on *:3000');

@@ -57,8 +57,11 @@ gulp.task('minify-app', function(){
 });
 
 
+expressFiles = [
+    './app/index.js',
+    './app/backend/models/*.js'
+]
 var expressFiles = './app/index.js'
-
 
 // run server
 gulp.task( 'server:start', function() {
