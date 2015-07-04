@@ -57,19 +57,26 @@ gulp.task('minify-app', function(){
 });
 
 
+var expressFiles = './app/index.js'
+
+
 // run server
 gulp.task( 'server:start', function() {
-    server.listen( { path: './app/index.js' } );
+    server.listen( { path: expressFiles } );
 });
 
-// restart server if app.js changed
-//gulp.task( 'server:restart', function() {
-//    gulp.watch( [ './app/index.js' ], server.restart );
-//});
+
+// If server scripts change, restart the server and then browser-reload.
+gulp.task( 'server:restart', function() {
+    server.restart( function( error ) {
+    });
+});
+
 
 // Watch Our Files
 gulp.task('watch', function() {
-  gulp.watch(appFiles, ['minify-app']);
+    gulp.watch(appFiles, ['minify-app']);
+    gulp.watch(expressFiles, [ 'server:restart' ] );
 });
 
 

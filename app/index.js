@@ -11,6 +11,7 @@ var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 var config    = require('yaml-config');
 var settings  = config.readConfig('app/config/app.yml')
 
+
 var GOOGLE_CLIENT_ID = settings.google.client_id;
 var GOOGLE_CLIENT_SECRET = settings.google.client_secret;
 
@@ -49,23 +50,28 @@ app.use(express.static('app/public'));
 //   serialized and deserialized.
 passport.serializeUser(function(user, done) {
 
+    var hash = {
+        provider:       user['provider'],
+        providerId:     user['id'],
+        displayName:    user['displayName'],
+        photos:         user['photos']
+    }
 
-    console.log('passport.serializeUser')
-
-
-  done(null, user);
+    done(null, hash);
 });
 
 passport.deserializeUser(function(obj, done) {
 
-
-    console.log('passport.deserializeUser')
-    console.log('obj', obj)
-    console.log('done', done)
-
-
-
-  done(null, obj);
+    User.findOne({providerId: obj['providerId']}, function(err, dbUser) {
+        var hash = {
+            _id:            dbUser['_id'],
+            provider:       obj['provider'],
+            providerId:     obj['providerId'],
+            displayName:    obj['displayName'],
+            photos:         obj['photos']
+        }
+        done(err, hash);
+    });
 });
 
 
@@ -84,18 +90,13 @@ passport.use(new GoogleStrategy({
     process.nextTick(function () {
 
 
-
-
-
         User.find({providerId: profile.id}, function(err, user) {
           if (err) throw err;
           // object of the user
 
             if (user.length == 0) {
 
-            console.log('creating new user')
                 var u       = new User();
-                u._raw      = profile._raw;
                 u.provider  = profile.provider;
                 u.providerId = profile.id;
 
@@ -105,7 +106,6 @@ passport.use(new GoogleStrategy({
             }
 
         });
-
 
         return done(null, profile);
     });
@@ -122,9 +122,7 @@ passport.use(new GoogleStrategy({
 //   request.  The first step in Google authentication will involve
 //   redirecting the user to google.com.  After authorization, Google
 //   will redirect the user back to this application at /auth/google/callback
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login'] }),
-  function(req, res){
+app.get('/auth/google', passport.authenticate('google', { scope: ['https://www.googleapis.com/auth/plus.login'] }), function(req, res){
     // The request will be redirected to Google for authentication, so this
     // function will not be called.
   });
@@ -134,11 +132,12 @@ app.get('/auth/google',
 //   request.  If authentication fails, the user will be redirected back to the
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
-app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/' }),
-  function(req, res) {
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), function(req, res) {
+
     res.redirect('/');
-  });
+
+
+});
 
 app.get('/logout', function(req, res){
   req.logout();
@@ -148,9 +147,10 @@ app.get('/logout', function(req, res){
 
 
 app.get('/', function(req, res){
-        var sess = req.session
 
-        if (sess.passport.user != undefined) {
+console.log('req["user"]', req['user']);
+
+        if (req['user'] != undefined) {
             res.sendFile(__dirname + '/retro.html');
         }
         else {
