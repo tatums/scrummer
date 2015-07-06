@@ -1,4 +1,5 @@
-  <div class="row">
+
+<div class="row">
 
       <div class="col-md-12 ">
           <form class="form-horizontal" ng-submit="ctrl.submit(retro, input, retroForm.$valid)" name="retroForm" novalidate ng-controller="FormConsumeController as ctrl">
@@ -27,14 +28,9 @@
   </div>
 
     <ul>
-      <li ng-repeat="message in messages">
-        {{message}}
+      <li ng-repeat="user in users">
+        {{user}}
       </li>
     </ul>
-
-    <form name="chatForm" ng-submit="submit(form, chatForm.$valid)">
-      <input ng-model="form.body" type="text" class="form-control" name="body">
-      <button type="submit" class="btn btn-default">Send</button>
-    </form>
 
 

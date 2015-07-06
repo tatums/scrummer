@@ -3,52 +3,119 @@ var session     = require('express-session')
 var morgan      = require('morgan');
 var bodyParser  = require('body-parser');
 var app         = express();
-var server      = require('http').createServer(app);
-var io          = require('socket.io')(server);
+var cookieParser= require('cookie-parser');
+
+
+
+
+var passportSocketIo = require("passport.socketio");
+
+
 var mongoose    = require('mongoose');
 var passport    = require('passport');
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 var config    = require('yaml-config');
 var settings  = config.readConfig('app/config/app.yml')
 
+
 var GOOGLE_CLIENT_ID = settings.google.client_id;
 var GOOGLE_CLIENT_SECRET = settings.google.client_secret;
 
-var sess = {
-    secret: 'keyboard cat',
-    resave: true,
-    saveUninitialized: true,
-    cookie: {}
-};
+var MongoStore = require('connect-mongo')(session);
+var MongoSessionStore = new MongoStore({url: 'mongodb://127.0.0.1/retro'});
+
+//var sessionMiddleware = session({
+//    name: "scrummer",
+//    secret: 'keyboard cat',
+//    resave: true,
+//    saveUninitialized: true,
+//    store:  MongoSessionStore,
+//    cookie: {}
+//});
 
 
 app.use(morgan('dev'));
-app.use(session(sess));
+//app.use(sessionMiddleware);
+//app.use(express.cookieParser());
+app.use(cookieParser());
+app.use(session({
+    name: "scrummer",
+    secret: 'keyboard cat',
+    resave: false,
+    saveUninitialized: true,
+    store: MongoSessionStore
+}));
 app.use(passport.initialize());
 app.use(passport.session());
 
-mongoose.connect('mongodb://localhost/retro');
-var Retro     = require('./backend/models/retro');
-var Response     = require('./backend/models/response');
-var User     = require('./backend/models/user');
+mongoose.connect('mongodb://127.0.0.1/retro');
+
+var Retro       = require('./backend/models/retro');
+var Response    = require('./backend/models/response');
+var User        = require('./backend/models/user');
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-
 app.use(express.static('app/public'));
 
+var server = app.listen(3000);
+
+server.listen(3000, function(){
+  console.log('listening on *:3000');
+});
 
 
 
 
-
-socket = require('./socket.js');
-io.sockets.on('connection', socket);
+var io = require('socket.io')(server)
 
 
 
+io.use(passportSocketIo.authorize({
+    cookieParser: cookieParser,
+    key:          'scrummer',           // the name of the cookie where express/connect stores its session_id
+    secret:       'keyboard cat',       // the session_secret to parse the cookie
+    store:        MongoSessionStore,    // we NEED to use a sessionstore. no memorystore please
+    success:      onAuthorizeSuccess,    // *optional* callback on success - read more below
+    fail:         onAuthorizeFail    // *optional* callback on fail/error - read more below
+}));
 
+
+function onAuthorizeSuccess(data, accept){
+  console.log('successful connection to socket.io');
+
+  console.log('data', data);
+  console.log('accept', accept);
+  accept();
+}
+
+
+function onAuthorizeFail(data, message, error, accept){
+  if(error)
+    throw new Error(message);
+
+  console.log('failed connection to socket.io:', message);
+  console.log('error', error)
+
+  // If you don't want to accept the connection
+  if(error)
+    accept(new Error(message));
+  // this error will be sent to the user as a special error-package
+  // see: http://socket.io/docs/client-api/#socket > error-object
+}
+
+
+
+
+io.on('connection', function(socket){
+    console.log('server is emit: user:connection');
+    io.emit('user:connection', 'user:CONNECT');
+
+    socket.on('disconnect', function () {
+        io.emit('user:disconnect', 'user:DISCONNECT');
+    });
+});
 
 
 
@@ -82,10 +149,45 @@ passport.deserializeUser(function(obj, done) {
             displayName:    obj['displayName'],
             photos:         obj['photos']
         }
+
+        onlineUsers.add(hash);
+console.log(
+        'onlineUsers.all', onlineUsers.all()
+        );
+        io.emit('user:connection', hash);
+
         done(err, hash);
     });
 });
 
+function isInArray(value, array) {
+  return array.indexOf(value) > -1;
+}
+
+var users = [];
+// Keep track of users
+var onlineUsers = (function () {
+
+    return {
+        add: function(user){
+            var i = users.indexOf(user.providerId);
+            if ( users.indexOf(user.providerId) == -1 ){
+                users.push(user.providerId);
+            }
+            return users;
+        },
+        remove: function(user){
+            var i = users.indexOf(user.providerId);
+            if ( users.indexOf(user.providerId) == -1 ){
+                users.slice(i, 1);
+            }
+            return users;
+        },
+        all: function(){
+            return users;
+        }
+  };
+}());
 
 // Use the GoogleStrategy within Passport.
 //   Strategies in Passport require a `verify` function, which accept
@@ -93,6 +195,7 @@ passport.deserializeUser(function(obj, done) {
 //   profile), and invoke a callback with a user object.
 passport.use(new GoogleStrategy({
 
+    // TODO Have the callbackURL rely on yaml settings
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
     callbackURL: "http://127.0.0.1:3000/auth/google/callback"
@@ -100,7 +203,6 @@ passport.use(new GoogleStrategy({
 }, function(accessToken, refreshToken, profile, done) {
     // asynchronous verification, for effect...
     process.nextTick(function () {
-
 
         User.find({providerId: profile.id}, function(err, user) {
             if (err) throw err;
@@ -146,9 +248,7 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['https://www.g
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/' }), function(req, res) {
-
     res.redirect('/');
-
 });
 
 app.get('/logout', function(req, res){
@@ -159,9 +259,6 @@ app.get('/logout', function(req, res){
 
 
 app.get('/', function(req, res){
-
-console.log('user', req.user);
-
         if (req.user != undefined) {
             res.sendFile(__dirname + '/retro.html');
         }
@@ -170,30 +267,27 @@ console.log('user', req.user);
         }
     })
 
-
-    .get('/chat', function(req, res){
-        console.log('chat')
+app.get('/chat', function(req, res){
         res.sendFile(__dirname + '/frontend/chat.html');
-    })
+});
 
-    .get('/retros', function(req, res){
-        Retro.find().populate('_creator').exec(function(err, retros) {
-            if (err) res.send(err);
-            res.json(retros);
-        });
-    })
+app.get('/retros', function(req, res){
+    Retro.find().populate('_creator').exec(function(err, retros) {
+        if (err) res.send(err);
+        res.json(retros);
+    });
+});
 
-    .get('/retros/:id', function (req, res){
+app.get('/retros/:id', function (req, res){
 
 
+    Retro.findById(req.params.id).populate('_creator').exec(function(err, retro) {
+        if (err) res.send(err);
+        res.json(retro);
+    });
+});
 
-        Retro.findById(req.params.id).populate('_creator').exec(function(err, retro) {
-            if (err) res.send(err);
-            res.json(retro);
-        });
-    })
-
-    .delete('/retros/:id', ensureAuthenticated, function (req, res){
+    app.delete('/retros/:id', ensureAuthenticated, function (req, res){
         Retro.remove({_id: req.params.id}, function(err, retro) {
             if (err) res.send(err);
             res.json({message: 'Successfully deleted' });
@@ -230,9 +324,9 @@ console.log('user', req.user);
             if (err) res.send(err);
             res.json({retro: {_id: response._id, retro_id: response.retro_id, input: response.input} });
         });
-    })
+    });
 
-    .get('/responses', ensureAuthenticated, function (req, res){
+    app.get('/responses', ensureAuthenticated, function (req, res){
         Response.find({retro_id: req.query.retro_id}, function(err, responses) {
             if (err) res.send(err);
             res.json({responses: responses});
@@ -241,9 +335,6 @@ console.log('user', req.user);
 
 
 
-server.listen(3000, function(){
-  console.log('listening on *:3000');
-});
 
 // Simple route middleware to ensure user is authenticated.
 //   Use this route middleware on any resource that needs to be protected.  If
@@ -251,8 +342,9 @@ server.listen(3000, function(){
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
 function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) { return next(); }
-  res.redirect('/login');
+
+    if (req.isAuthenticated()) { return next(); }
+    res.redirect('/login');
 }
 
 

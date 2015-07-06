@@ -215,7 +215,8 @@ myControllers.controller('NewController', [ '$scope', function($scope) {
 
 'use strict';
 
-myControllers.controller('ShowController', [ '$scope',
+myControllers.controller('ShowController', [
+        '$scope',
         'retro',
         'responses',
         '$builder',
@@ -228,58 +229,45 @@ myControllers.controller('ShowController', [ '$scope',
             $validator,
             socketio) {
 
-    $scope.retro = retro;
-    $scope.responses = responses;
-    var defaultForm = angular.fromJson(retro.form);
+            $scope.retro = retro;
+            $scope.responses = responses;
+            var defaultForm = angular.fromJson(retro.form);
 
-    $builder.forms['default'] = defaultForm;
+            $builder.forms['default'] = defaultForm;
 
-    $scope.messages = ['hello'];
-
-    console.log('reminder: There is an instance of socketio attached to window')
-    window.socketio = socketio;
+            $scope.messages = ['hello'];
+            $scope.users = [];
 
 
+            socketio.on('user:connection', function(data) {
+                var i = $scope.users.indexOf(data)
+                console.log('client received user:connection. data:', data);
+                if (i != -1){
+                    $scope.users.push(data);
+                }
+            });
 
-    socketio.on('send:message', function(message) {
-        console.log('send:message', message)
-        console.log('$scope.messages', $scope.messages)
-        $scope.messages.push(message);
-    });
-
-
-
-    $scope.submit = function(form, validity){
-
-        socketio.emit('send:message', {
-            message: form.body
-        });
-
-        // add the message to our model locally
-        $scope.messages.push({
-          user: $scope.name,
-          text: form.body
-        });
-        form.body = '';
-
-    }
+            socketio.on('user:disconnect', function(data) {
+                console.log('client received user:disconnect. data:', data);
+            });
 
 
+            $scope.submit = function(form, validity){
+                socketio.emit('send:message', {
+                    message: form.body
+                });
 
-           // var room = 'retro'
+                // add the message to our model locally
+                $scope.messages.push({
+                    user: $scope.name,
+                    text: form.body
+                });
+                form.body = '';
 
-           // io.on('connection', function(socket){
-           //   socket.on(room, function(msg){
-           //     io.emit(room, msg);
-           //   });
-           // });
+            }
 
-
-
-
-
-
-}]);
+        }
+]);
 
 myServices.factory('Response', [ '$resource', function($resource) {
     return $resource('/responses/:id', {}, {
@@ -295,26 +283,29 @@ myServices.factory('Retro', [ '$resource', function($resource) {
 
 'use strict';
 
+
 myServices.factory('socketio', function ($rootScope) {
-  var socket = io.connect();
-  return {
-    on: function(eventName, callback) {
-      socket.on(eventName, function () {
-        var args = arguments;
-        $rootScope.$apply(function () {
-          callback.apply(socket, args);
-        });
-      });
-    },
-    emit: function(eventName, data, callback) {
-      socket.emit(eventName, data, function () {
-        var args = arguments;
-        $rootScope.$apply(function () {
-          if (callback) {
-            callback.apply(socket, args);
-          }
-        });
-      })
-    }
-  };
+    var socket = io.connect('http://localhost:3000');
+    window.socket = socket;
+
+    return {
+        on: function(eventName, callback) {
+            socket.on(eventName, function() {
+                var args = arguments;
+                $rootScope.$apply(function() {
+                    callback.apply(socket, args);
+                });
+            });
+        },
+        emit: function(eventName, data, callback) {
+            socket.emit(eventName, data, function() {
+                var args = arguments;
+                $rootScope.$apply(function() {
+                    if (callback) {
+                        callback.apply(socket, args);
+                    }
+                });
+            })
+        }
+    };
 });

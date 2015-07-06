@@ -57,15 +57,15 @@ gulp.task('minify-app', function(){
 });
 
 
-expressFiles = [
+var expressFiles = [
     './app/index.js',
-    './app/backend/models/*.js'
+    './app/backend/models/*.js',
+    './app/socket.js'
 ]
-var expressFiles = './app/index.js'
 
 // run server
 gulp.task( 'server:start', function() {
-    server.listen( { path: expressFiles } );
+    server.listen( { path: './app/index.js' } );
 });
 
 
@@ -79,7 +79,7 @@ gulp.task( 'server:restart', function() {
 // Watch Our Files
 gulp.task('watch', function() {
     gulp.watch(appFiles, ['minify-app']);
-    gulp.watch(expressFiles, [ 'server:restart' ] );
+    gulp.watch(expressFiles, ['server:restart' ] );
 });
 
 
