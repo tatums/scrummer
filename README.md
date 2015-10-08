@@ -28,3 +28,11 @@ $ gulp watch
 ```
 $ node app/index.js
 ```
+
+## Config
+```yaml
+default:
+  google:
+    client_id: 123
+    client_secret: ABc123
+```
